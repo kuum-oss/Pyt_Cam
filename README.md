@@ -1,4 +1,4 @@
-# 🛡️ Senior Eye Tracker & Posture Guardian
+# 🛡️ Eye Tracker & Posture Guardian
 
 ![Python](https://img.shields.io/badge/Python-3.9+-yellow?style=for-the-badge\&logo=python)
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-Face%20Detection-orange?style=for-the-badge)
