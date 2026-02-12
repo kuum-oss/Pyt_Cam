@@ -1,44 +1,48 @@
 import cv2
 import numpy as np
 import os
+import random
+import webbrowser
 from pathlib import Path
 from typing import Optional
 from interfaces import IContentProvider
 
 
 class FileSystemMemeProvider(IContentProvider):
-    def __init__(self, folder: str, target_name: str):
-        self._folder = Path(folder)
-        self._target_name = target_name
-        self._meme_path = self._find_meme()
-        self._meme_image = self._load_meme()
+    def __init__(self, folder: str, youtube_url: str):
+        # Пытаемся развернуть путь (превратить ~/Desktop в полный путь)
+        self._folder = Path(folder).expanduser().resolve()
+        self._youtube_url = youtube_url
 
-    def _find_meme(self) -> Optional[Path]:
-        if not self._folder.exists():
-            os.makedirs(self._folder, exist_ok=True)
-            print(f"[Warning] Created meme folder at {self._folder}. Put an image there!")
-            return None
+        # Логика создания папки с защитой от ошибок
+        try:
+            if not self._folder.exists():
+                self._folder.mkdir(parents=True, exist_ok=True)
+                print(f"\n[SUCCESS] Папка создана! Закиньте видео сюда:\n---> {self._folder}\n")
+            else:
+                print(f"\n[INFO] Папка с мемами найдена:\n---> {self._folder}\n")
+        except PermissionError:
+            # Если macOS не дает писать на рабочий стол, создаем папку memes внутри проекта
+            print(f"[ERROR] Нет прав на создание папки на Рабочем столе. Создаю в папке проекта.")
+            self._folder = Path("memes").resolve()
+            self._folder.mkdir(exist_ok=True)
+            print(f"---> Новая папка: {self._folder}\n")
 
-        for file in self._folder.iterdir():
-            if self._target_name in file.name and file.suffix.lower() in ['.jpg', '.png', '.jpeg']:
-                return file
-        return None
+    def get_random_video(self) -> Optional[Path]:
+        # Ищем mp4, mov, avi
+        extensions = {'.mp4', '.mov', '.avi', '.mkv'}
+        videos = [f for f in self._folder.iterdir() if f.suffix.lower() in extensions]
+        return random.choice(videos) if videos else None
 
-    def _load_meme(self) -> Optional[np.ndarray]:
-        if self._meme_path:
-            img = cv2.imread(str(self._meme_path))
-            if img is None:
-                print(f"[Error] Failed to load image: {self._meme_path}")
-            return img
-        return None
+    def play_emergency_action(self):
+        video_path = self.get_random_video()
+        if video_path:
+            print(f"[ACTION] Запускаю видео: {video_path.name}")
+            # Универсальная команда открытия для macOS
+            os.system(f"open '{video_path}'")
+        else:
+            print("[ACTION] Видео не найдены. Открываю YouTube.")
+            webbrowser.open(self._youtube_url)
 
     def get_content_frame(self) -> Optional[np.ndarray]:
-        if self._meme_image is None:
-            blank = np.zeros((480, 640, 3), dtype=np.uint8)
-            cv2.putText(blank, "MEME NOT FOUND", (50, 240),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(blank, f"Put '{self._target_name}' in folder", (50, 280),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
-            return blank
-        return self._meme_image
-    
+        return None

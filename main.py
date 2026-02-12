@@ -6,20 +6,20 @@ from services.meme import FileSystemMemeProvider
 from app import AttentionGuardian
 
 if __name__ == "__main__":
-    # Dependency Injection Container (Manual)
-
+    # Теперь передаем только те параметры, которые есть в config.py
     config = AppConfig(
-        PITCH_THRESHOLD=15.0,
+        PITCH_THRESHOLD=0.065,  # Порог для Face Detection
         MEME_FOLDER="memes",
-        TARGET_MEME_NAME="clean_code"
+        YOUTUBE_URL="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     )
 
     try:
-        # Инициализация с учетом импортов из пакета services
         camera = WebcamSource(config.CAMERA_INDEX)
         detector = MediaPipeFaceDetector()
         pose_estimator = GeometryPoseEstimator()
-        meme_loader = FileSystemMemeProvider(config.MEME_FOLDER, config.TARGET_MEME_NAME)
+
+        # Передаем папку и ссылку в провайдер контента
+        meme_loader = FileSystemMemeProvider(config.MEME_FOLDER, config.YOUTUBE_URL)
 
         app = AttentionGuardian(config, camera, detector, pose_estimator, meme_loader)
         app.run()
